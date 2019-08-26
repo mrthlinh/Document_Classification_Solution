@@ -21,9 +21,11 @@ The web app is deployed in GCP and available at https://protean-unity-251012.app
    I decided to use two state-of-the-art models, convolutional neural network and LSTM. Both used an embedding layer to vectorize words, followed by feature extraction layers and a fully-connected layer for classification at the end. These architecture are as follows
 
    Convolution Neural Network
+
    ![](pic/convNN.png)
 
    LSTM model
+
    ![](pic/LSTM.png)
 
    All models are in Keras but converted to __Tensor Flow Estimator__ with serving and input function for predictions.
@@ -51,9 +53,11 @@ The web app is deployed in GCP and available at https://protean-unity-251012.app
     **F-1 score**
 
     Convolutional Neural Network
+
    ![](pic/f1_convNN.png)
 
     LSTM
+    
    ![](pic/f1_LSTM.png)
 
    **Confusion Matrix**
