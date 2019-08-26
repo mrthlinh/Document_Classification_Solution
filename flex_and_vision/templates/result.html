@@ -1,0 +1,81 @@
+<!-- {{ result|tojson }} -->
+
+<h1>Results</h1>
+<html>
+  <body>
+
+    {% for pred in result["predictions"] %}
+        <p>Predictions: {{pred['prediction']}}</p>
+        <!-- <p>a: {{pred['condidence']}}</p> -->
+        <p>Confidence:</p>
+        <ol>
+            <li>DELETION OF INTEREST: 
+                <progress value="{{pred['condidence']['DELETION OF INTEREST']}}" max="1">
+                </progress>
+            </li>
+
+            <li>RETURNED CHECK:
+                <progress value="{{pred['condidence']['RETURNED CHECK']}}" max="1">
+                </progress>
+            </li>
+
+            <li>BILL
+                <progress value="{{pred['condidence']['BILL']}}" max="1">
+                </progress>
+            </li>
+
+            <li>POLICY CHANGE
+                <progress value="{{pred['condidence']['POLICY CHANGE']}}" max="1">
+                </progress>
+            </li>  
+
+            <li>CANCELLATION NOTICE
+                    <progress value="{{pred['condidence']['CANCELLATION NOTICE']}}" max="1">
+                        </progress>
+            </li>
+
+            <li>DECLARATION
+                    <progress value="{{pred['condidence']['DECLARATION']}}" max="1">
+                        </progress>
+            </li>
+
+            <li>CHANGE ENDORSEMENT
+                    <progress value="{{pred['condidence']['CHANGE ENDORSEMENT']}}" max="1">
+                        </progress>
+            </li>
+
+            <li>NON-RENEWAL NOTICE
+                    <progress value="{{pred['condidence']['NON-RENEWAL NOTICE']}}" max="1">
+                        </progress>
+            </li>  
+
+            <li>BINDER
+                    <progress value="{{pred['condidence']['BINDER']}}" max="1">
+                        </progress>
+            </li>
+            <li>REINSTATEMENT NOTICE:
+                <progress value="{{pred['condidence']['REINSTATEMENT NOTICE']}}" max="1">
+                </progress>
+            </li>
+            <li>EXPIRATION NOTICE
+                    <progress value="{{pred['condidence']['EXPIRATION NOTICE']}}" max="1">
+                        </progress>
+            </li>
+            <li>INTENT TO CANCEL NOTICE
+                    <progress value="{{pred['condidence']['INTENT TO CANCEL NOTICE']}}" max="1">
+                        </progress>
+            </li>
+            <li>APPLICATION
+                    <progress value="{{pred['condidence']['APPLICATION']}}" max="1">
+                        </progress>
+            </li>
+            <li>BILL BINDER
+                    <progress value="{{pred['condidence']['BILL BINDER']}}" max="1">
+                        </progress>
+            </li>
+
+        </ol>
+    {% endfor %}
+
+  </body>
+</html> 

@@ -25,17 +25,20 @@ from flask import Flask, redirect, render_template, request
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
 import json
+# import pandas as pd
+import numpy as np 
+
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "My First Project-e90e6b12d97d.json"
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
 # https://codelabs.developers.google.com/codelabs/cloud-vision-app-engine/index.html?index=..%2F..index#7
 
 CLOUD_STORAGE_BUCKET = os.environ.get('CLOUD_STORAGE_BUCKET')
 
-
+# PROJECT = os.environ.get('PROJECT_ID')
+#  = 'protean-unity-251012'
+PROJECT ='protean-unity-251012'
 app = Flask(__name__)
-
-import pandas as pd
-import numpy as np 
 
 labels = ['DELETION OF INTEREST', 'RETURNED CHECK', 'BILL', 'POLICY CHANGE',
        'CANCELLATION NOTICE', 'DECLARATION', 'CHANGE ENDORSEMENT',
@@ -43,7 +46,7 @@ labels = ['DELETION OF INTEREST', 'RETURNED CHECK', 'BILL', 'POLICY CHANGE',
        'EXPIRATION NOTICE', 'INTENT TO CANCEL NOTICE', 'APPLICATION',
        'BILL BINDER']
 CLASSES = {k:v for k,v in enumerate(labels)}
-PROJECT = 'protean-unity-251012'
+
 
 @app.route('/')
 def homepage():
@@ -109,7 +112,10 @@ def my_form_post():
         
         new_response['predictions'].append(new_object)
     
-    return flask.jsonify(new_response)
+    # result = flask.jsonify(new_response)
+    result = new_response
+    return render_template('result.html', result=result)
+    # return 
 
 
 @app.errorhandler(500)
