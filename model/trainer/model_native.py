@@ -16,7 +16,10 @@ from tensorflow.python.keras.layers import Embedding
 from tensorflow.python.keras.layers import Conv1D
 from tensorflow.python.keras.layers import MaxPooling1D
 from tensorflow.python.keras.layers import GlobalAveragePooling1D
+from tensorflow.python.keras.layers import SpatialDropout1D, LSTM
 
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.layers import LSTM, Activation, Dense, Dropout, Input, Embedding
 from google.cloud import storage
 
 tf.logging.set_verbosity(tf.logging.INFO)
@@ -136,6 +139,16 @@ def pad(feature, label):
     padded = padded[-MAX_SEQUENCE_LENGTH:]  # slice to constant length
     return (padded, label)
 
+def pad_w_label(feature):
+    # 1. Remove 0s which represent out of vocabulary words
+    nonzero_indices = tf.where(tf.not_equal(feature, tf.zeros_like(feature)))
+    without_zeros = tf.gather(feature,nonzero_indices)
+    without_zeros = tf.squeeze(without_zeros, axis=1)
+
+    # 2. Prepend 0s till MAX_SEQUENCE_LENGTH
+    padded = tf.pad(without_zeros, [[MAX_SEQUENCE_LENGTH, 0]])  # pad out with zeros
+    padded = padded[-MAX_SEQUENCE_LENGTH:]  # slice to constant length
+    return padded
 
 """
 Given sentences, return an integer representation
@@ -185,60 +198,159 @@ Builds a CNN model using keras and converts to tf.estimator.Estimator
     # Returns
         A tf.estimator.Estimator 
 """
+# def keras_estimator(model_dir,
+#                     config,
+#                     learning_rate,
+#                     filters=64,
+#                     dropout_rate=0.2,
+#                     embedding_dim=200,
+#                     kernel_size=3,
+#                     pool_size=3,
+#                     embedding_path=None,
+#                     word_index=None):
+#     # Create model instance.
+#     model = models.Sequential()
+#     num_features = min(len(word_index) + 1, TOP_K)
+
+#     # Add embedding layer. If pre-trained embedding is used add weights to the
+#     # embeddings layer and set trainable to input is_embedding_trainable flag.
+#     if embedding_path != None:
+#         embedding_matrix = get_embedding_matrix(word_index, embedding_path, embedding_dim)
+#         is_embedding_trainable = True  # set to False to freeze embedding weights
+
+#         model.add(Embedding(input_dim=num_features,
+#                             output_dim=embedding_dim,
+#                             input_length=MAX_SEQUENCE_LENGTH,
+#                             weights=[embedding_matrix],
+#                             trainable=is_embedding_trainable))
+#     else:
+#         model.add(Embedding(input_dim=num_features,
+#                             output_dim=embedding_dim,
+#                             input_length=MAX_SEQUENCE_LENGTH))
+
+#     model.add(Dropout(rate=dropout_rate))
+#     model.add(Conv1D(filters=filters,
+#                               kernel_size=kernel_size,
+#                               activation='relu',
+#                               bias_initializer='random_uniform',
+#                               padding='same'))
+
+#     model.add(MaxPooling1D(pool_size=pool_size))
+#     model.add(Conv1D(filters=filters * 2,
+#                               kernel_size=kernel_size,
+#                               activation='relu',
+#                               bias_initializer='random_uniform',
+#                               padding='same'))
+#     model.add(GlobalAveragePooling1D())
+#     model.add(Dropout(rate=dropout_rate))
+#     model.add(Dense(len(CLASSES), activation='softmax'))
+
+#     # Compile model with learning parameters.
+#     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
+#     model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['acc'])
+#     estimator = tf.keras.estimator.model_to_estimator(keras_model=model, model_dir=model_dir, config=config)
+
+#     return estimator
+
+# def keras_estimator(model_dir,
+#                     config,
+#                     learning_rate,
+#                     # filters=64,
+#                     # dropout_rate=0.2,
+#                     embedding_dim=200,
+#                     # kernel_size=3,
+#                     # pool_size=3,
+#                     embedding_path=None,
+#                     word_index=None):
+#     # Create model instance.
+#     model = models.Sequential()
+#     num_features = min(len(word_index) + 1, TOP_K)
+
+#     # Add embedding layer. If pre-trained embedding is used add weights to the
+#     # embeddings layer and set trainable to input is_embedding_trainable flag.
+#     if embedding_path != None:
+#         embedding_matrix = get_embedding_matrix(word_index, embedding_path, embedding_dim)
+#         is_embedding_trainable = True  # set to False to freeze embedding weights
+
+#         model.add(Embedding(input_dim=num_features,
+#                             output_dim=embedding_dim,
+#                             input_length=MAX_SEQUENCE_LENGTH,
+#                             weights=[embedding_matrix],
+#                             trainable=is_embedding_trainable))
+#     else:
+#         model.add(Embedding(input_dim=num_features,
+#                             output_dim=embedding_dim,
+#                             input_length=MAX_SEQUENCE_LENGTH))
+
+#     model.add(SpatialDropout1D(0.2))
+#     # model.add(Reshape(target_shape = [N_INPUTS, 1]))
+#     # model.add(LSTM(units=200,return_sequences = True))
+#     model.add(LSTM(units=64,dropout=0.1, recurrent_dropout=0.1))
+# #     model.add(Dense(units = 50, activation = tf.nn.relu))
+#     model.add(Dense(len(CLASSES), activation='softmax'))
+
+#     # Compile model with learning parameters.
+#     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
+#     # model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['acc'])
+#     model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['acc'])
+#     estimator = tf.keras.estimator.model_to_estimator(keras_model=model, model_dir=model_dir, config=config)
+
+#     return estimator
+
 def keras_estimator(model_dir,
                     config,
                     learning_rate,
-                    filters=64,
-                    dropout_rate=0.2,
-                    embedding_dim=200,
-                    kernel_size=3,
-                    pool_size=3,
+                    embedding_dim=50,
                     embedding_path=None,
                     word_index=None):
-    # Create model instance.
-    model = models.Sequential()
-    num_features = min(len(word_index) + 1, TOP_K)
+    
+#     # Create model instance.
+#     model = models.Sequential()
+#     num_features = min(len(word_index) + 1, TOP_K)
 
-    # Add embedding layer. If pre-trained embedding is used add weights to the
-    # embeddings layer and set trainable to input is_embedding_trainable flag.
-    if embedding_path != None:
-        embedding_matrix = get_embedding_matrix(word_index, embedding_path, embedding_dim)
-        is_embedding_trainable = True  # set to False to freeze embedding weights
+#     # Add embedding layer. If pre-trained embedding is used add weights to the
+#     # embeddings layer and set trainable to input is_embedding_trainable flag.
+#     if embedding_path != None:
+#         embedding_matrix = get_embedding_matrix(word_index, embedding_path, embedding_dim)
+#         is_embedding_trainable = True  # set to False to freeze embedding weights
 
-        model.add(Embedding(input_dim=num_features,
-                            output_dim=embedding_dim,
-                            input_length=MAX_SEQUENCE_LENGTH,
-                            weights=[embedding_matrix],
-                            trainable=is_embedding_trainable))
-    else:
-        model.add(Embedding(input_dim=num_features,
-                            output_dim=embedding_dim,
-                            input_length=MAX_SEQUENCE_LENGTH))
+#         model.add(Embedding(input_dim=num_features,
+#                             output_dim=embedding_dim,
+#                             input_length=MAX_SEQUENCE_LENGTH,
+#                             weights=[embedding_matrix],
+#                             trainable=is_embedding_trainable))
+#     else:
+#         model.add(Embedding(input_dim=num_features,
+#                             output_dim=embedding_dim,
+#                             input_length=MAX_SEQUENCE_LENGTH))
 
-    model.add(Dropout(rate=dropout_rate))
-    model.add(Conv1D(filters=filters,
-                              kernel_size=kernel_size,
-                              activation='relu',
-                              bias_initializer='random_uniform',
-                              padding='same'))
-
-    model.add(MaxPooling1D(pool_size=pool_size))
-    model.add(Conv1D(filters=filters * 2,
-                              kernel_size=kernel_size,
-                              activation='relu',
-                              bias_initializer='random_uniform',
-                              padding='same'))
-    model.add(GlobalAveragePooling1D())
-    model.add(Dropout(rate=dropout_rate))
-    model.add(Dense(len(CLASSES), activation='softmax'))
+#     model.add(SpatialDropout1D(0.2))
+#     # model.add(Reshape(target_shape = [N_INPUTS, 1]))
+#     # model.add(LSTM(units=200,return_sequences = True))
+#     model.add(LSTM(units=64,dropout=0.1, recurrent_dropout=0.1))
+# #     model.add(Dense(units = 50, activation = tf.nn.relu))
+#     model.add(Dense(len(CLASSES), activation='softmax'))
+    
+    max_len = MAX_SEQUENCE_LENGTH
+    max_words = TOP_K
+    
+    inputs = Input(name='inputs',shape=[max_len])
+    layer = Embedding(input_dim=max_words, output_dim=embedding_dim,input_length=max_len)(inputs)
+    layer = LSTM(64)(layer)
+    layer = Dense(50,name='FC1')(layer)
+    layer = Activation('relu')(layer)
+    layer = Dropout(0.5)(layer)
+    layer = Dense(len(CLASSES),name='out_layer')(layer)
+    layer = Activation('softmax')(layer)
+    model = Model(inputs=inputs,outputs=layer)    
 
     # Compile model with learning parameters.
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
+    # model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['acc'])
     model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['acc'])
     estimator = tf.keras.estimator.model_to_estimator(keras_model=model, model_dir=model_dir, config=config)
 
     return estimator
-
 
 """
 Defines the features to be passed to the model during inference
@@ -249,6 +361,7 @@ Defines the features to be passed to the model during inference
 def serving_input_fn():
     feature_placeholder = tf.placeholder(tf.string, [None])
     features = vectorize_sentences(feature_placeholder)
+    features = tf.map_fn(pad_w_label,features)
     return tf.estimator.export.TensorServingInputReceiver(features, feature_placeholder)
 
 
