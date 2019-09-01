@@ -48,7 +48,7 @@ The web app is deployed in GCP and available at https://protean-unity-251012.app
 
    |Metrics|ConvNN|LSTM|
    |:------|:----:|:---:|
-   |Accuracy|76%|17%|
+   |Accuracy|76%|76%|
 
     **F-1 score**
 
