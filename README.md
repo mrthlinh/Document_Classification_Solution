@@ -42,15 +42,18 @@ The web app is deployed in GCP and available at https://protean-unity-251012.app
 
 ## Results
 
-1. Model training
+1. Accuracy
 
    The results:
 
    |Metrics|ConvNN|LSTM|
    |:------|:----:|:---:|
-   |Accuracy|76%|76%|
+   |Accuracy|85%|76%|
 
-    **F-1 score**
+2. F-1 score
+  
+    - Precision: Minimize False Positive Rate (TP / (TP + FP))
+    - Recall: Minimize False Negative Rate (TP / (TP + FN))
 
     Convolutional Neural Network
 
@@ -60,7 +63,7 @@ The web app is deployed in GCP and available at https://protean-unity-251012.app
     
    ![](pic/f1_LSTM.png)
 
-   **Confusion Matrix**
+3. Confusion Matrix
 
    Convolutional Neural Network
 
@@ -69,6 +72,13 @@ The web app is deployed in GCP and available at https://protean-unity-251012.app
    LSTM
 
     ![](pic/cm_LSTM.png)
+
+4. Conclusion
+
+   |ConvNN|LSTM|
+   |:----:|:---:|
+   |Train faster with comparable result|Train longer|
+  
 
 
 ## How to run
